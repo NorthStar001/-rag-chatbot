@@ -1,5 +1,6 @@
 """
-Streamlit Frontend for Lightweight RAG Chatbot
+LexNigeria - Nigerian Constitution Intelligence Assistant
+Streamlit frontend for the RAG chatbot
 Run with: streamlit run app.py
 """
 
@@ -8,114 +9,342 @@ import os
 from dotenv import load_dotenv
 from main import LightweightRAGChatbot
 
-# Load environment variables
 load_dotenv()
 
-# --- Page Config ---
 st.set_page_config(
-    page_title="RAG Chatbot",
-    page_icon="🤖",
-    layout="centered"
+    page_title="LexNigeria — Constitutional Intelligence",
+    page_icon="⚖",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- Custom CSS ---
 st.markdown("""
 <style>
-    /* Main background */
-    .stApp {
-        background-color: #0f1117;
-        color: #e0e0e0;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
-    /* Chat message bubbles */
-    .user-bubble {
-        background-color: #1e3a5f;
-        color: #e0e0e0;
-        padding: 12px 16px;
-        border-radius: 16px 16px 4px 16px;
-        margin: 8px 0;
-        max-width: 80%;
-        margin-left: auto;
-        font-size: 15px;
-    }
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .bot-bubble {
-        background-color: #1c1f2b;
-        color: #e0e0e0;
-        padding: 12px 16px;
-        border-radius: 16px 16px 16px 4px;
-        margin: 8px 0;
-        max-width: 80%;
-        border-left: 3px solid #4a9eff;
-        font-size: 15px;
-    }
+html, body, .stApp {
+    background-color: #0A0F1E;
+    color: #F5F0E8;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+}
 
-    /* Header */
-    .chat-header {
-        text-align: center;
-        padding: 20px 0 10px 0;
-    }
+/* ── Hide Streamlit chrome ── */
+#MainMenu, footer, header, .stDeployButton { display: none !important; }
+.stAppHeader { display: none !important; }
+div[data-testid="stToolbar"] { display: none !important; }
 
-    .chat-header h1 {
-        color: #4a9eff;
-        font-size: 2rem;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-    }
+/* ── Sidebar ── */
+section[data-testid="stSidebar"] {
+    background-color: #0D1424;
+    border-right: 1px solid #1E2A45;
+    padding-top: 0 !important;
+}
 
-    .chat-header p {
-        color: #888;
-        font-size: 0.9rem;
-    }
+section[data-testid="stSidebar"] > div {
+    padding: 0 !important;
+}
 
-    /* Status badge */
-    .status-badge {
-        display: inline-block;
-        background-color: #1a3a1a;
-        color: #4caf50;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        margin-bottom: 16px;
-    }
+/* ── Sidebar inner content ── */
+.sidebar-brand {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid #1E2A45;
+    margin-bottom: 8px;
+}
 
-    /* Hide Streamlit default elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+.sidebar-brand-name {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #C9A84C;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
 
-    /* Input box */
-    .stTextInput > div > div > input {
-        background-color: #1c1f2b;
-        color: #e0e0e0;
-        border: 1px solid #2d3348;
-        border-radius: 10px;
-    }
+.sidebar-brand-sub {
+    font-size: 11px;
+    color: #4A5568;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+}
 
-    /* Button */
-    .stButton > button {
-        background-color: #4a9eff;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 8px 20px;
-        font-weight: 600;
-    }
+.sidebar-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid #1E2A45;
+}
 
-    .stButton > button:hover {
-        background-color: #3a8eef;
-    }
+.sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #4A5568;
+    margin-bottom: 12px;
+}
 
-    /* Sidebar */
-    .css-1d391kg {
-        background-color: #1c1f2b;
-    }
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.stat-key {
+    font-size: 12px;
+    color: #6B7A9A;
+    font-weight: 400;
+}
+
+.stat-val {
+    font-size: 12px;
+    color: #F5F0E8;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-val.gold { color: #C9A84C; }
+
+/* ── Sidebar buttons ── */
+section[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #1E2A45;
+    color: #6B7A9A;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    margin-bottom: 6px;
+}
+
+section[data-testid="stSidebar"] .stButton > button:hover {
+    border-color: #C9A84C;
+    color: #C9A84C;
+    background: rgba(201, 168, 76, 0.06);
+}
+
+/* ── Main area ── */
+.main .block-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* ── Page header ── */
+.page-header {
+    padding: 32px 48px 0;
+    border-bottom: 1px solid #1E2A45;
+    margin-bottom: 0;
+}
+
+.page-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #F5F0E8;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.page-title span {
+    color: #C9A84C;
+}
+
+.page-meta {
+    font-size: 12px;
+    color: #4A5568;
+    margin-top: 6px;
+    padding-bottom: 20px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+}
+
+/* ── Empty state ── */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 340px;
+    text-align: center;
+    padding: 48px;
+}
+
+.empty-icon {
+    width: 52px;
+    height: 52px;
+    border: 1px solid #1E2A45;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 22px;
+    color: #C9A84C;
+}
+
+.empty-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #F5F0E8;
+    margin-bottom: 8px;
+}
+
+.empty-sub {
+    font-size: 13px;
+    color: #4A5568;
+    max-width: 380px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+/* ── Suggestion chips ── */
+.chips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.chip {
+    background: #0D1424;
+    border: 1px solid #1E2A45;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #6B7A9A;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+}
+
+.chip:hover {
+    border-color: #C9A84C;
+    color: #C9A84C;
+}
+
+/* ── Chat messages ── */
+.chat-area {
+    padding: 24px 48px;
+    min-height: 300px;
+}
+
+.message-wrap {
+    margin-bottom: 20px;
+}
+
+.message-wrap.user { display: flex; justify-content: flex-end; }
+.message-wrap.bot  { display: flex; justify-content: flex-start; }
+
+.message-bubble {
+    max-width: 68%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.65;
+    position: relative;
+}
+
+.message-bubble.user {
+    background: #1A2340;
+    color: #F5F0E8;
+    border-top: 2px solid #C9A84C;
+    border-bottom-right-radius: 4px;
+}
+
+.message-bubble.bot {
+    background: #0D1424;
+    color: #D8D4CB;
+    border: 1px solid #1E2A45;
+    border-top: 2px solid #2A3A5C;
+    border-bottom-left-radius: 4px;
+}
+
+.message-role {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: #4A5568;
+}
+
+.message-bubble.user .message-role { color: #C9A84C; text-align: right; }
+
+/* ── Input bar ── */
+.input-bar-wrap {
+    padding: 16px 48px 24px;
+    border-top: 1px solid #1E2A45;
+    background: #0A0F1E;
+}
+
+div[data-testid="stTextInput"] input {
+    background: #0D1424 !important;
+    border: 1px solid #1E2A45 !important;
+    border-radius: 8px !important;
+    color: #F5F0E8 !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease !important;
+}
+
+div[data-testid="stTextInput"] input:focus {
+    border-color: #C9A84C !important;
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.08) !important;
+}
+
+div[data-testid="stTextInput"] input::placeholder {
+    color: #2E3A55 !important;
+}
+
+/* ── Send button ── */
+.main .stButton > button {
+    background: #C9A84C !important;
+    color: #0A0F1E !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 12px 24px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    letter-spacing: 0.04em !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease !important;
+    width: 100% !important;
+}
+
+.main .stButton > button:hover {
+    background: #B8963E !important;
+}
+
+/* ── Spinner ── */
+.stSpinner > div { border-top-color: #C9A84C !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0A0F1E; }
+::-webkit-scrollbar-thumb { background: #1E2A45; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2A3A5C; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# --- Initialize Chatbot ---
-@st.cache_resource
+# ── Init chatbot ──
+@st.cache_resource(show_spinner=False)
 def load_chatbot():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -127,78 +356,127 @@ def load_chatbot():
     return chatbot
 
 
-# --- Session State ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+chatbot = load_chatbot()
 
-# --- Header ---
+# ── Sidebar ──
+with st.sidebar:
+    st.markdown("""
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-name">LexNigeria</div>
+        <div class="sidebar-brand-sub">Constitutional Intelligence</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label">Knowledge Base</div>', unsafe_allow_html=True)
+
+    doc_count = len(chatbot.documents) if chatbot else 0
+    st.markdown(f"""
+    <div class="stat-row">
+        <span class="stat-key">Document chunks</span>
+        <span class="stat-val gold">{doc_count:,}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-key">Source</span>
+        <span class="stat-val">1999 Constitution</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-key">Model</span>
+        <span class="stat-val">Gemini 2.5 Flash</span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label">Actions</div>', unsafe_allow_html=True)
+
+    if st.button("Clear conversation"):
+        st.session_state.messages = []
+        st.rerun()
+
+    if st.button("Reload documents"):
+        if chatbot:
+            chatbot.clear_database()
+            chatbot.load_documents_from_folder("docs")
+            st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="sidebar-section">
+        <div class="sidebar-label">Accepted Formats</div>
+        <div class="stat-row"><span class="stat-key">PDF</span><span class="stat-val">Supported</span></div>
+        <div class="stat-row"><span class="stat-key">DOCX</span><span class="stat-val">Supported</span></div>
+        <div class="stat-row"><span class="stat-key">TXT</span><span class="stat-val">Supported</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ── Main content ──
 st.markdown("""
-<div class="chat-header">
-    <h1>🤖 RAG Chatbot</h1>
-    <p>Ask anything about your documents</p>
+<div class="page-header">
+    <div class="page-title">Nigerian <span>Constitution</span> Assistant</div>
+    <div class="page-meta">Ask questions about the 1999 Constitution of the Federal Republic of Nigeria</div>
 </div>
 """, unsafe_allow_html=True)
 
+SUGGESTIONS = [
+    "What are the fundamental rights of Nigerian citizens?",
+    "How is the President of Nigeria elected?",
+    "What are the requirements to contest for Senate?",
+    "How can the Constitution be amended?",
+    "What powers does the National Assembly have?",
+    "How are state governors removed from office?",
+]
 
-# --- Sidebar ---
-with st.sidebar:
-    st.markdown("### ⚙️ Settings")
-    st.markdown("---")
+# ── Chat area ──
+st.markdown('<div class="chat-area">', unsafe_allow_html=True)
 
-    chatbot = load_chatbot()
+if not st.session_state.messages:
+    chips_html = '<div class="chips-grid">'
+    for s in SUGGESTIONS:
+        chips_html += f'<div class="chip">{s}</div>'
+    chips_html += '</div>'
 
-    if chatbot:
-        doc_count = len(chatbot.documents)
-        st.markdown(f"**📄 Document chunks:** `{doc_count}`")
-        st.markdown(f"**🧠 Model:** `gemini-2.5-flash`")
-        st.markdown("---")
-
-        if st.button("🗑️ Clear Chat History"):
-            st.session_state.messages = []
-            st.rerun()
-
-        if st.button("🔄 Reload Documents"):
-            chatbot.clear_database()
-            chatbot.load_documents_from_folder("docs")
-            st.success("Documents reloaded!")
-            st.rerun()
-    else:
-        st.error("❌ GEMINI_API_KEY not found in .env file")
-
-    st.markdown("---")
-    st.markdown("**Supported formats:**")
-    st.markdown("📄 PDF &nbsp; 📝 TXT &nbsp; 📃 DOCX")
-    st.markdown("<small style='color:#666'>Place files in the `docs/` folder</small>", unsafe_allow_html=True)
-
-
-# --- Chat Area ---
-chat_container = st.container()
-
-with chat_container:
-    if not st.session_state.messages:
-        st.markdown("""
-        <div style='text-align:center; color:#555; padding: 40px 0;'>
-            <div style='font-size: 3rem;'>💬</div>
-            <p>Ask a question about your documents to get started.</p>
+    st.markdown(f"""
+    <div class="empty-state">
+        <div class="empty-icon">§</div>
+        <div class="empty-title">Ask the Constitution</div>
+        <div class="empty-sub">
+            This assistant answers questions grounded strictly in the text of the
+            1999 Constitution of Nigeria. Try a question below or type your own.
+        </div>
+        {chips_html}
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    for msg in st.session_state.messages:
+        role = msg["role"]
+        content = msg["content"]
+        role_label = "You" if role == "user" else "LexNigeria"
+        bubble_class = "user" if role == "user" else "bot"
+        st.markdown(f"""
+        <div class="message-wrap {bubble_class}">
+            <div class="message-bubble {bubble_class}">
+                <div class="message-role">{role_label}</div>
+                {content}
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    for msg in st.session_state.messages:
-        if msg["role"] == "user":
-            st.markdown(f'<div class="user-bubble">🧑 {msg["content"]}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="bot-bubble">🤖 {msg["content"]}</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-
-# --- Input ---
-st.markdown("---")
-col1, col2 = st.columns([5, 1])
+# ── Input bar ──
+st.markdown('<div class="input-bar-wrap">', unsafe_allow_html=True)
+col1, col2 = st.columns([6, 1])
 
 with col1:
     user_input = st.text_input(
-        label="message",
-        placeholder="Ask something about your documents...",
+        label="query",
+        placeholder="Ask about the Nigerian Constitution...",
         label_visibility="collapsed",
         key="user_input"
     )
@@ -206,17 +484,15 @@ with col1:
 with col2:
     send = st.button("Send", use_container_width=True)
 
-# --- Handle Send ---
-if send and user_input.strip():
-    chatbot = load_chatbot()
+st.markdown('</div>', unsafe_allow_html=True)
 
+# ── Handle input ──
+if send and user_input.strip():
     if not chatbot:
-        st.error("Chatbot not initialized. Check your GEMINI_API_KEY in .env")
+        st.error("Assistant unavailable. GEMINI_API_KEY is not configured.")
     else:
         st.session_state.messages.append({"role": "user", "content": user_input})
-
-        with st.spinner("Thinking..."):
+        with st.spinner(""):
             response = chatbot.query(user_input)
-
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()
