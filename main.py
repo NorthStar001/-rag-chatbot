@@ -21,7 +21,7 @@ class LightweightRAGChatbot:
     def __init__(self, api_key):
         """Initialize RAG chatbot with Groq API"""
         self.client = Groq(api_key=api_key)
-        self.model_id = 'llama-3.2-70b-versatile'
+        self.model_id = 'llama-3.3-70b-versatile'
 
         self.vectorizer = TfidfVectorizer(
             max_features=8000,

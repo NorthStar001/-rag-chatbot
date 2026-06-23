@@ -391,7 +391,7 @@ with st.sidebar:
     </div>
     <div class="stat-row">
         <span class="stat-key">Model</span>
-        <span class="stat-val">Llama 3.2 70B</span>
+        <span class="stat-val">Llama 3.3 70B</span>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
