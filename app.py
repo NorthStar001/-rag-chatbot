@@ -346,8 +346,14 @@ div[data-testid="stTextInput"] input::placeholder {
 # ── Init chatbot ──
 @st.cache_resource(show_spinner=False)
 def load_chatbot():
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
+    # Try Streamlit secrets first (for deployed apps), then .env (for local dev)
+    api_key = None
+    try:
+        api_key = st.secrets["GROQ_API_KEY"]
+    except (FileNotFoundError, KeyError):
+        api_key = os.getenv("GROQ_API_KEY")
+    
+    if not api_key or not api_key.strip():
         return None
     chatbot = LightweightRAGChatbot(api_key)
     docs_folder = "docs"
@@ -385,7 +391,7 @@ with st.sidebar:
     </div>
     <div class="stat-row">
         <span class="stat-key">Model</span>
-        <span class="stat-val">Llama 3.1 70B</span>
+        <span class="stat-val">Llama 3.2 70B</span>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
