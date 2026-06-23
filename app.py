@@ -346,7 +346,7 @@ div[data-testid="stTextInput"] input::placeholder {
 # ── Init chatbot ──
 @st.cache_resource(show_spinner=False)
 def load_chatbot():
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return None
     chatbot = LightweightRAGChatbot(api_key)
@@ -385,7 +385,7 @@ with st.sidebar:
     </div>
     <div class="stat-row">
         <span class="stat-key">Model</span>
-        <span class="stat-val">Gemini 2.5 Flash</span>
+        <span class="stat-val">Llama 3.1 70B</span>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -489,7 +489,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ── Handle input ──
 if send and user_input.strip():
     if not chatbot:
-        st.error("Assistant unavailable. GEMINI_API_KEY is not configured.")
+        st.error("Assistant unavailable. GROQ_API_KEY is not configured.")
     else:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.spinner(""):

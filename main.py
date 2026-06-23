@@ -1,15 +1,14 @@
 """
-LexNigeria - Lightweight RAG Chatbot using Gemini API with sklearn embeddings
-Improved: sentence-aware chunking, better retrieval, retry logic, tighter prompting
-Install: pip install google-genai scikit-learn pypdf python-docx python-dotenv
+LexNigeria - Lightweight RAG Chatbot using Groq API with sklearn embeddings
+Improved: sentence-aware chunking, query expansion, retry logic, tighter prompting
+Install: pip install groq scikit-learn pypdf python-docx python-dotenv
 """
 
-from google import genai
+from groq import Groq
 import os
 import re
 import time
 import pickle
-from pathlib import Path
 from dotenv import load_dotenv
 import pypdf
 import docx
@@ -20,15 +19,15 @@ import numpy as np
 
 class LightweightRAGChatbot:
     def __init__(self, api_key):
-        """Initialize RAG chatbot with Gemini API"""
-        self.client = genai.Client(api_key=api_key)
-        self.model_id = 'gemini-2.5-flash'
+        """Initialize RAG chatbot with Groq API"""
+        self.client = Groq(api_key=api_key)
+        self.model_id = 'llama-3.1-70b-versatile'
 
         self.vectorizer = TfidfVectorizer(
-            max_features=8000,        # increased vocab size
-            ngram_range=(1, 3),       # capture more phrase patterns
+            max_features=8000,
+            ngram_range=(1, 3),
             stop_words='english',
-            sublinear_tf=True,        # dampens high-frequency terms for better balance
+            sublinear_tf=True,
             min_df=1,
             max_df=0.95
         )
@@ -137,24 +136,17 @@ class LightweightRAGChatbot:
 
         if count == 0:
             print(f"No supported documents found in '{folder_path}'")
-            print(f"Supported formats: .txt, .pdf, .docx")
         else:
             print(f"\nSuccessfully processed {count} file(s)")
 
     def _chunk_text(self, text, target_chunk_size=800, overlap_sentences=2):
-        """
-        Sentence-aware chunking: splits on sentence boundaries instead of
-        raw character count, so no sentence is cut in half.
-        """
-        # Clean up whitespace
+        """Sentence-aware chunking — no sentence is cut in half"""
         text = re.sub(r'\n{3,}', '\n\n', text)
         text = re.sub(r'[ \t]+', ' ', text)
 
-        # Split into sentences using punctuation boundaries
         sentence_endings = re.compile(r'(?<=[.!?])\s+(?=[A-Z])')
         sentences = sentence_endings.split(text)
 
-        # Also split on newlines that likely separate sections
         refined = []
         for s in sentences:
             parts = s.split('\n\n')
@@ -165,30 +157,23 @@ class LightweightRAGChatbot:
         current_chunk = []
         current_length = 0
 
-        for i, sentence in enumerate(sentences):
+        for sentence in sentences:
             sentence_len = len(sentence)
             current_chunk.append(sentence)
             current_length += sentence_len
 
             if current_length >= target_chunk_size:
                 chunks.append(' '.join(current_chunk))
-                # Overlap: keep last N sentences for context continuity
                 current_chunk = current_chunk[-overlap_sentences:] if len(current_chunk) > overlap_sentences else []
                 current_length = sum(len(s) for s in current_chunk)
 
-        # Add remaining sentences
         if current_chunk:
             chunks.append(' '.join(current_chunk))
 
-        # Filter out chunks that are too short to be meaningful
-        chunks = [c for c in chunks if len(c) > 80]
-        return chunks
+        return [c for c in chunks if len(c) > 80]
 
     def _expand_query(self, question):
-        """
-        Simple query expansion: add legal synonyms to improve TF-IDF recall
-        for constitutional terminology.
-        """
+        """Add legal synonyms to improve TF-IDF recall"""
         expansions = {
             'rights': 'rights freedoms entitlements',
             'president': 'president executive commander-in-chief',
@@ -208,25 +193,18 @@ class LightweightRAGChatbot:
         for word, synonyms in expansions.items():
             if word.lower() in question.lower():
                 expanded += ' ' + synonyms
-
         return expanded
 
     def query(self, question, n_results=5, min_score=0.05):
-        """Query the RAG system with improved retrieval and retry logic"""
+        """Query the RAG system"""
         try:
             if len(self.documents) == 0:
                 return "No documents in the knowledge base. Please add documents first."
 
-            # Expand query for better recall
             expanded_question = self._expand_query(question)
-
-            # Vectorize the expanded question
             question_vector = self.vectorizer.transform([expanded_question])
-
-            # Calculate cosine similarity
             similarities = cosine_similarity(question_vector, self.vectors)[0]
 
-            # Get top N results above minimum score threshold
             top_indices = np.argsort(similarities)[-n_results:][::-1]
             relevant_docs = [
                 (self.documents[i], similarities[i])
@@ -240,13 +218,11 @@ class LightweightRAGChatbot:
                     "Please try rephrasing, or ask something more specific about the Nigerian Constitution."
                 )
 
-            # Build context, highest scoring first
             context_parts = []
             for i, (doc, score) in enumerate(relevant_docs, 1):
                 context_parts.append(f"[Section {i}]\n{doc}")
             context = "\n\n".join(context_parts)
 
-            # Constitution-specific prompt
             prompt = f"""You are LexNigeria, a precise legal assistant specialising in the 1999 Constitution of the Federal Republic of Nigeria (as amended).
 
 Your role:
@@ -263,33 +239,34 @@ Question: {question}
 
 Answer:"""
 
-            # Call Gemini with retry logic
-            return self._call_gemini_with_retry(prompt)
+            return self._call_groq_with_retry(prompt)
 
         except Exception as e:
             return f"An error occurred while processing your question: {e}"
 
-    def _call_gemini_with_retry(self, prompt, max_retries=3, delay=2):
-        """Call Gemini API with automatic retry on 503/rate limit errors"""
+    def _call_groq_with_retry(self, prompt, max_retries=3, delay=2):
+        """Call Groq API with automatic retry on rate limit errors"""
         for attempt in range(max_retries):
             try:
-                response = self.client.models.generate_content(
+                response = self.client.chat.completions.create(
                     model=self.model_id,
-                    contents=prompt
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1024,
+                    temperature=0.1,
                 )
-                return response.text
+                return response.choices[0].message.content
             except Exception as e:
                 error_str = str(e)
-                is_retryable = any(code in error_str for code in ['503', '429', 'UNAVAILABLE', 'quota'])
+                is_retryable = any(code in error_str for code in ['429', '503', 'rate_limit', 'UNAVAILABLE'])
 
                 if is_retryable and attempt < max_retries - 1:
                     wait = delay * (attempt + 1)
-                    print(f"API temporarily unavailable. Retrying in {wait}s... (attempt {attempt + 1}/{max_retries})")
+                    print(f"API rate limited. Retrying in {wait}s... (attempt {attempt + 1}/{max_retries})")
                     time.sleep(wait)
                 else:
                     if is_retryable:
                         return (
-                            "The Gemini API is currently experiencing high demand. "
+                            "The service is currently busy. "
                             "Please wait a moment and try your question again."
                         )
                     raise e
@@ -336,15 +313,14 @@ Answer:"""
                 print(f"Error: {e}")
 
 
-# Example usage
 if __name__ == "__main__":
     print("Starting LexNigeria...")
     load_dotenv()
 
-    API_KEY = os.getenv("GEMINI_API_KEY")
+    API_KEY = os.getenv("GROQ_API_KEY")
     if not API_KEY:
-        print("\nGEMINI_API_KEY not found in environment")
-        API_KEY = input("Enter your Gemini API key: ").strip()
+        print("\nGROQ_API_KEY not found in environment")
+        API_KEY = input("Enter your Groq API key: ").strip()
         if not API_KEY:
             print("API key is required. Exiting...")
             exit(1)
@@ -363,8 +339,6 @@ if __name__ == "__main__":
     else:
         print(f"\nFolder '{docs_folder}' not found. Creating it...")
         os.makedirs(docs_folder)
-        print(f"Created '{docs_folder}' folder")
-        print(f"Tip: Place your .txt, .pdf, or .docx files in '{docs_folder}' and restart")
         response = input("\nContinue without documents? (y/n): ").strip().lower()
         if response != 'y':
             print("Exiting. Add documents and restart!")
