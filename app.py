@@ -365,6 +365,9 @@ def load_chatbot():
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "pending_uploads" not in st.session_state:
+    st.session_state.pending_uploads = []
+
 chatbot = load_chatbot()
 
 # ── Sidebar ──
@@ -416,24 +419,32 @@ with st.sidebar:
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-label">Add documents</div>', unsafe_allow_html=True)
     st.caption("Upload your own PDF, DOCX, or TXT files to expand the knowledge base.")
+    
     uploaded_files = st.file_uploader(
         "Choose files",
         type=["pdf", "docx", "txt"],
         accept_multiple_files=True,
-        key="document_uploader"
+        key="document_uploader",
+        on_change=lambda: st.session_state.update({"pending_uploads": st.session_state.document_uploader})
     )
 
     if st.button("Upload to knowledge base"):
+        files_to_upload = st.session_state.get("pending_uploads", [])
+        
         if not chatbot:
             st.error("Assistant unavailable. GROQ_API_KEY is not configured.")
-        elif uploaded_files:
+        elif files_to_upload:
             added_count = 0
-            for uploaded_file in uploaded_files:
-                if chatbot.add_uploaded_file(uploaded_file):
-                    added_count += 1
+            for uploaded_file in files_to_upload:
+                try:
+                    if chatbot.add_uploaded_file(uploaded_file):
+                        added_count += 1
+                except Exception as e:
+                    st.error(f"Error adding {uploaded_file.name}: {str(e)}")
 
             if added_count:
                 st.success(f"Added {added_count} document(s) to the knowledge base.")
+                st.session_state.pending_uploads = []
                 st.rerun()
             else:
                 st.warning("No supported files were added. Please try again with a PDF, DOCX, or TXT file.")
