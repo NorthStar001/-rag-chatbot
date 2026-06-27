@@ -365,6 +365,9 @@ def load_chatbot():
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "active_source" not in st.session_state:
+    st.session_state.active_source = "All sources"
+
 chatbot = load_chatbot()
 
 # ── Sidebar ──
