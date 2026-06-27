@@ -255,7 +255,8 @@ class LightweightRAGChatbot:
 
 Your role:
 - Answer questions using ONLY the constitutional text provided below.
-- Be accurate, clear, and structured. Use plain language where possible.
+- Be accurate, concise, and clear. Avoid repeated stock openings or restating the same introductory phrase.
+- Do not begin the response with generic lead-ins like "According to the provided constitutional context" unless necessary for clarity.
 - If the answer spans multiple sections, synthesise them clearly.
 - If the provided context does not contain enough information to answer the question, say so explicitly — do not speculate or draw from outside knowledge.
 - Always ground your answer in the constitutional text. Where relevant, reference the section or provision.
