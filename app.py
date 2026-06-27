@@ -431,8 +431,7 @@ with st.sidebar:
         clear_button_clicked = st.button("Clear selection", use_container_width=True)
     
     if clear_button_clicked:
-        st.session_state.document_uploader = None
-        st.rerun()
+        st.info("Refresh the page to clear file selection.")
     
     if upload_button_clicked:
         if not chatbot:
@@ -454,8 +453,6 @@ with st.sidebar:
 
             if added_count > 0:
                 st.success(f"✓ Successfully added {added_count} document(s) to the knowledge base.")
-                st.session_state.document_uploader = None
-                st.rerun()
         else:
             st.info("📄 Select one or more documents to upload.")
 
