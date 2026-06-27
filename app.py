@@ -405,10 +405,14 @@ with st.sidebar:
     else:
         source_options = ["All sources"]
 
-    st.session_state.active_source = st.selectbox(
+    selected_index = 0
+    if "active_source" in st.session_state and st.session_state.active_source in source_options:
+        selected_index = source_options.index(st.session_state.active_source)
+
+    st.selectbox(
         "Active source",
         source_options,
-        index=source_options.index(st.session_state.active_source) if st.session_state.active_source in source_options else 0,
+        index=selected_index,
         format_func=lambda x: x,
         key="active_source"
     )
