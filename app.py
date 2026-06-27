@@ -365,9 +365,6 @@ def load_chatbot():
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "pending_uploads" not in st.session_state:
-    st.session_state.pending_uploads = []
-
 chatbot = load_chatbot()
 
 # ── Sidebar ──
@@ -424,32 +421,43 @@ with st.sidebar:
         "Choose files",
         type=["pdf", "docx", "txt"],
         accept_multiple_files=True,
-        key="document_uploader",
-        on_change=lambda: st.session_state.update({"pending_uploads": st.session_state.document_uploader})
+        key="document_uploader"
     )
 
-    if st.button("Upload to knowledge base"):
-        files_to_upload = st.session_state.get("pending_uploads", [])
-        
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        upload_button_clicked = st.button("Upload to knowledge base", use_container_width=True)
+    with col2:
+        clear_button_clicked = st.button("Clear selection", use_container_width=True)
+    
+    if clear_button_clicked:
+        st.session_state.document_uploader = None
+        st.rerun()
+    
+    if upload_button_clicked:
         if not chatbot:
             st.error("Assistant unavailable. GROQ_API_KEY is not configured.")
-        elif files_to_upload:
+        elif uploaded_files:
             added_count = 0
-            for uploaded_file in files_to_upload:
+            failed_count = 0
+            for uploaded_file in uploaded_files:
                 try:
                     if chatbot.add_uploaded_file(uploaded_file):
                         added_count += 1
+                        st.write(f"✓ Added {uploaded_file.name}")
+                    else:
+                        failed_count += 1
+                        st.warning(f"Could not add {uploaded_file.name}")
                 except Exception as e:
+                    failed_count += 1
                     st.error(f"Error adding {uploaded_file.name}: {str(e)}")
 
-            if added_count:
-                st.success(f"Added {added_count} document(s) to the knowledge base.")
-                st.session_state.pending_uploads = []
+            if added_count > 0:
+                st.success(f"✓ Successfully added {added_count} document(s) to the knowledge base.")
+                st.session_state.document_uploader = None
                 st.rerun()
-            else:
-                st.warning("No supported files were added. Please try again with a PDF, DOCX, or TXT file.")
         else:
-            st.info("Select one or more documents to upload.")
+            st.info("📄 Select one or more documents to upload.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
