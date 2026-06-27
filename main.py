@@ -83,6 +83,9 @@ class LightweightRAGChatbot:
         self._save_database()
         print(f"Added {len(texts)} chunks (Total: {len(self.documents)})")
 
+    def get_sources(self):
+        return ["All sources"] + sorted({md.get("source", "Unknown") for md in self.metadatas})
+
     def add_text_file(self, file_path):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -140,9 +143,10 @@ class LightweightRAGChatbot:
         if not content.strip():
             print(f"Warning: Empty content in {source}")
             return
+        source_name = os.path.basename(source) if isinstance(source, str) else "uploaded_document"
         chunks = self._chunk_text(content)
         if chunks:
-            self.add_documents(chunks, [{"source": source}] * len(chunks))
+            self.add_documents(chunks, [{"source": source_name}] * len(chunks))
 
     def load_documents_from_folder(self, folder_path):
         print(f"\nScanning documents in '{folder_path}'...")
@@ -223,7 +227,7 @@ class LightweightRAGChatbot:
                 expanded += ' ' + synonyms
         return expanded
 
-    def query(self, question, n_results=5, min_score=0.05):
+    def query(self, question, n_results=5, min_score=0.05, active_source="All sources"):
         """Query the RAG system"""
         try:
             if len(self.documents) == 0:
@@ -231,14 +235,26 @@ class LightweightRAGChatbot:
 
             expanded_question = self._expand_query(question)
             question_vector = self.vectorizer.transform([expanded_question])
-            similarities = cosine_similarity(question_vector, self.vectors)[0]
 
-            top_indices = np.argsort(similarities)[-n_results:][::-1]
-            relevant_docs = [
-                (self.documents[i], similarities[i])
-                for i in top_indices
-                if similarities[i] > min_score
-            ]
+            if active_source and active_source != "All sources":
+                valid_indices = [i for i, md in enumerate(self.metadatas) if md.get("source") == active_source]
+                if not valid_indices:
+                    return f"No documents found for the selected source: {active_source}."
+                similarities = cosine_similarity(question_vector, self.vectors[valid_indices])[0]
+                top_indices = np.argsort(similarities)[-n_results:][::-1]
+                relevant_docs = [
+                    (self.documents[valid_indices[i]], similarities[i])
+                    for i in top_indices
+                    if similarities[i] > min_score
+                ]
+            else:
+                similarities = cosine_similarity(question_vector, self.vectors)[0]
+                top_indices = np.argsort(similarities)[-n_results:][::-1]
+                relevant_docs = [
+                    (self.documents[i], similarities[i])
+                    for i in top_indices
+                    if similarities[i] > min_score
+                ]
 
             if not relevant_docs:
                 return (

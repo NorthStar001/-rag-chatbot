@@ -396,6 +396,20 @@ with st.sidebar:
         <span class="stat-val">Llama 3.3 70B</span>
     </div>
     """, unsafe_allow_html=True)
+
+    if chatbot:
+        source_options = chatbot.get_sources()
+    else:
+        source_options = ["All sources"]
+
+    st.session_state.active_source = st.selectbox(
+        "Active source",
+        source_options,
+        index=source_options.index(st.session_state.active_source) if st.session_state.active_source in source_options else 0,
+        format_func=lambda x: x,
+        key="active_source"
+    )
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
@@ -556,6 +570,6 @@ if send and user_input.strip():
     else:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.spinner(""):
-            response = chatbot.query(user_input)
+            response = chatbot.query(user_input, active_source=st.session_state.active_source)
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()
