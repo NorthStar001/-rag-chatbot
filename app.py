@@ -368,6 +368,8 @@ if "messages" not in st.session_state:
 chatbot = load_chatbot()
 
 # ── Sidebar ──
+app_url = os.getenv("APP_URL") or "https://lexnigeria.streamlit.app"
+
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-brand">
@@ -410,6 +412,45 @@ with st.sidebar:
             st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label">Add documents</div>', unsafe_allow_html=True)
+    st.caption("Upload your own PDF, DOCX, or TXT files to expand the knowledge base.")
+    uploaded_files = st.file_uploader(
+        "Choose files",
+        type=["pdf", "docx", "txt"],
+        accept_multiple_files=True,
+        key="document_uploader"
+    )
+
+    if st.button("Upload to knowledge base"):
+        if not chatbot:
+            st.error("Assistant unavailable. GROQ_API_KEY is not configured.")
+        elif uploaded_files:
+            added_count = 0
+            for uploaded_file in uploaded_files:
+                if chatbot.add_uploaded_file(uploaded_file):
+                    added_count += 1
+
+            if added_count:
+                st.success(f"Added {added_count} document(s) to the knowledge base.")
+                st.rerun()
+            else:
+                st.warning("No supported files were added. Please try again with a PDF, DOCX, or TXT file.")
+        else:
+            st.info("Select one or more documents to upload.")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="sidebar-section">
+        <div class="sidebar-label">Deployment</div>
+        <div class="stat-row">
+            <span class="stat-key">Live URL</span>
+            <span class="stat-val"><a href="{app_url}" target="_blank" style="color:#C9A84C;text-decoration:none;">Open</a></span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="sidebar-section">

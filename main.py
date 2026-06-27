@@ -9,6 +9,7 @@ import os
 import re
 import time
 import pickle
+import tempfile
 from dotenv import load_dotenv
 import pypdf
 import docx
@@ -107,6 +108,33 @@ class LightweightRAGChatbot:
             self._process_and_add_content(content, file_path)
         except Exception as e:
             print(f"Error reading DOCX file {file_path}: {e}")
+
+    def add_uploaded_file(self, uploaded_file):
+        if uploaded_file is None:
+            return False
+
+        file_name = getattr(uploaded_file, 'name', 'uploaded_file')
+        extension = os.path.splitext(file_name)[1].lower()
+
+        if extension not in {'.txt', '.pdf', '.docx'}:
+            print(f"Unsupported uploaded file type: {extension}")
+            return False
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            temp_path = tmp_file.name
+
+        try:
+            if extension == '.txt':
+                self.add_text_file(temp_path)
+            elif extension == '.pdf':
+                self.add_pdf_file(temp_path)
+            else:
+                self.add_docx_file(temp_path)
+            return True
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
     def _process_and_add_content(self, content, source):
         if not content.strip():
