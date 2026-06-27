@@ -121,7 +121,7 @@ class LightweightRAGChatbot:
             return False
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as tmp_file:
-            tmp_file.write(uploaded_file.getvalue())
+            tmp_file.write(uploaded_file.read())
             temp_path = tmp_file.name
 
         try:
