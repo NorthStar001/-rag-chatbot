@@ -6,14 +6,20 @@ Run with: streamlit run app.py
 
 import streamlit as st
 import os
+import sys
 from dotenv import load_dotenv
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from main import LightweightRAGChatbot
 
 load_dotenv()
 
 st.set_page_config(
-    page_title="LexNigeria — Constitutional Intelligence",
-    page_icon="⚖",
+    page_title="NorthStar Assistance",
+    page_icon="✦",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -344,7 +350,6 @@ div[data-testid="stTextInput"] input::placeholder {
 
 
 # ── Init chatbot ──
-@st.cache_resource(show_spinner=False)
 def load_chatbot():
     # Try Streamlit secrets first (for deployed apps), then .env (for local dev)
     api_key = None
@@ -355,18 +360,12 @@ def load_chatbot():
     
     if not api_key or not api_key.strip():
         return None
-    chatbot = LightweightRAGChatbot(api_key)
-    docs_folder = "docs"
-    if os.path.exists(docs_folder) and len(chatbot.documents) == 0:
-        chatbot.load_documents_from_folder(docs_folder)
-    return chatbot
+
+    return LightweightRAGChatbot(api_key)
 
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-if "active_source" not in st.session_state:
-    st.session_state.active_source = "All sources"
 
 chatbot = load_chatbot()
 
@@ -376,8 +375,8 @@ app_url = os.getenv("APP_URL") or "https://lexnigeria.streamlit.app"
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-brand">
-        <div class="sidebar-brand-name">LexNigeria</div>
-        <div class="sidebar-brand-sub">Constitutional Intelligence</div>
+        <div class="sidebar-brand-name">NorthStar Assistance</div>
+        <div class="sidebar-brand-sub">Document Intelligence</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -392,30 +391,13 @@ with st.sidebar:
     </div>
     <div class="stat-row">
         <span class="stat-key">Source</span>
-        <span class="stat-val">1999 Constitution</span>
+        <span class="stat-val">Uploaded document</span>
     </div>
     <div class="stat-row">
         <span class="stat-key">Model</span>
         <span class="stat-val">Llama 3.3 70B</span>
     </div>
     """, unsafe_allow_html=True)
-
-    if chatbot:
-        source_options = chatbot.get_sources()
-    else:
-        source_options = ["All sources"]
-
-    selected_index = 0
-    if "active_source" in st.session_state and st.session_state.active_source in source_options:
-        selected_index = source_options.index(st.session_state.active_source)
-
-    st.selectbox(
-        "Active source",
-        source_options,
-        index=selected_index,
-        format_func=lambda x: x,
-        key="active_source"
-    )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -426,17 +408,17 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-    if st.button("Reload documents"):
+    if st.button("Clear knowledge base"):
         if chatbot:
             chatbot.clear_database()
-            chatbot.load_documents_from_folder("docs")
+            st.success("Knowledge base cleared. Upload a document to start again.")
             st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-label">Add documents</div>', unsafe_allow_html=True)
-    st.caption("Upload your own PDF, DOCX, or TXT files to expand the knowledge base.")
+    st.caption("Upload a PDF, DOCX, or TXT file to build the active knowledge base.")
     
     uploaded_files = st.file_uploader(
         "Choose files",
@@ -502,18 +484,17 @@ with st.sidebar:
 # ── Main content ──
 st.markdown("""
 <div class="page-header">
-    <div class="page-title">Nigerian <span>Constitution</span> Assistant</div>
-    <div class="page-meta">Ask questions about the 1999 Constitution of the Federal Republic of Nigeria</div>
+    <div class="page-title"><span>NorthStar</span> Assistance</div>
+    <div class="page-meta">Upload a document and ask questions about it. The assistant works from that document only.</div>
 </div>
 """, unsafe_allow_html=True)
 
 SUGGESTIONS = [
-    "What are the fundamental rights of Nigerian citizens?",
-    "How is the President of Nigeria elected?",
-    "What are the requirements to contest for Senate?",
-    "How can the Constitution be amended?",
-    "What powers does the National Assembly have?",
-    "How are state governors removed from office?",
+    "Summarize this document",
+    "What are the main points?",
+    "List the key decisions or actions",
+    "Extract the important dates and names",
+    "What should I pay attention to first?",
 ]
 
 # ── Chat area ──
@@ -528,10 +509,10 @@ if not st.session_state.messages:
     st.markdown(f"""
     <div class="empty-state">
         <div class="empty-icon">§</div>
-        <div class="empty-title">Ask the Constitution</div>
+        <div class="empty-title">Ask your document</div>
         <div class="empty-sub">
-            This assistant answers questions grounded strictly in the text of the
-            1999 Constitution of Nigeria. Try a question below or type your own.
+            Upload a PDF, DOCX, or TXT file from the sidebar and ask questions about it.
+            The assistant will answer using only that uploaded content.
         </div>
         {chips_html}
     </div>
@@ -560,7 +541,7 @@ col1, col2 = st.columns([6, 1])
 with col1:
     user_input = st.text_input(
         label="query",
-        placeholder="Ask about the Nigerian Constitution...",
+        placeholder="Ask about your uploaded document...",
         label_visibility="collapsed",
         key="user_input"
     )
@@ -577,6 +558,6 @@ if send and user_input.strip():
     else:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.spinner(""):
-            response = chatbot.query(user_input, active_source=st.session_state.active_source)
+            response = chatbot.query(user_input)
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()

@@ -1,21 +1,21 @@
-# LexNigeria
+# NorthStar Assistance
 
-LexNigeria is a lightweight retrieval-augmented generation (RAG) chatbot for answering questions about the 1999 Constitution of the Federal Republic of Nigeria. It combines a Streamlit frontend with a Python-based retrieval pipeline and Groq LLM inference to provide grounded, document-based answers.
+NorthStar Assistance is a lightweight document-based assistant powered by a Streamlit frontend, a Python retrieval pipeline, and Groq LLM inference. It is designed to answer questions from a single uploaded document at a time, keeping the knowledge source focused and avoiding cross-document confusion.
 
 ## What it does
 
-- Accepts questions about the Nigerian Constitution.
-- Searches a local knowledge base built from constitutional documents.
-- Returns answers grounded in the retrieved text rather than relying on open-ended model memory.
+- Accepts questions about a document uploaded by the user.
+- Builds a temporary knowledge base from that uploaded file.
+- Returns answers grounded strictly in the uploaded document content.
 - Supports PDF, DOCX, and TXT uploads directly from the UI.
 
 ## Features
 
 - Streamlit web interface with a polished chat experience
-- Local document ingestion from the docs folder or direct uploads
+- Uploaded-document-only knowledge mode
 - Sentence-aware chunking and TF-IDF retrieval
 - Groq API integration for answer generation
-- Sidebar summary for document counts and deployment info
+- Sidebar controls for clearing the knowledge base and managing the session
 
 ## Tech stack
 
@@ -31,7 +31,6 @@ LexNigeria is a lightweight retrieval-augmented generation (RAG) chatbot for ans
 
 - app.py — Streamlit frontend
 - main.py — chatbot logic and document ingestion
-- docs/ — default source documents
 - rag_db/ — serialized knowledge base cache
 
 ## Setup
@@ -44,7 +43,6 @@ LexNigeria is a lightweight retrieval-augmented generation (RAG) chatbot for ans
    - `pip install -r requirements.txt`
 4. Create a `.env` file with your Groq API key:
    - `GROQ_API_KEY=your_key_here`
-   - Optional: `APP_URL=https://your-app-url.streamlit.app`
 
 ## Run locally
 
@@ -56,14 +54,11 @@ streamlit run app.py
 
 ## Using the app
 
-- Ask constitutional questions in the chat box.
-- Use the sidebar to clear the chat, reload the default documents, or upload your own documents.
-- Uploaded PDF, DOCX, and TXT files are added to the knowledge base for future queries.
-
-## Deployment
-
-This app is ready to be deployed on Streamlit Cloud or similar services. Make sure to set the `GROQ_API_KEY` environment variable in your hosting platform.
+- Upload a PDF, DOCX, or TXT file from the sidebar.
+- Ask questions about that uploaded document.
+- The assistant will answer using only that document’s content.
+- Use the sidebar to clear the current knowledge base and start fresh.
 
 ## Notes
 
-If you encounter issues with folder access, make sure the docs and rag_db directories exist in the project root.
+This version is intentionally document-first. It does not rely on any preloaded default knowledge base, so uploaded content is the only active source for responses.
