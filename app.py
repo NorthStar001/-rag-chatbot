@@ -364,10 +364,33 @@ def load_chatbot():
     return LightweightRAGChatbot(api_key)
 
 
+def get_chatbot():
+    """Lazily initialize and return a chatbot instance stored in session state."""
+    if "chatbot" in st.session_state and st.session_state.chatbot:
+        return st.session_state.chatbot
+
+    api_key = None
+    try:
+        api_key = st.secrets["GROQ_API_KEY"]
+    except (FileNotFoundError, KeyError):
+        api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key or not api_key.strip():
+        return None
+
+    try:
+        st.session_state.chatbot = LightweightRAGChatbot(api_key)
+        return st.session_state.chatbot
+    except Exception as e:
+        st.session_state.chatbot = None
+        st.error(f"Failed to start assistant: {e}")
+        return None
+
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-chatbot = load_chatbot()
+chatbot = None
 
 # ── Sidebar ──
 app_url = os.getenv("APP_URL") or "https://lexnigeria.streamlit.app"
@@ -561,11 +584,12 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Handle input ──
 if send and user_input.strip():
-    if not chatbot:
+    cb = get_chatbot()
+    if not cb:
         st.error("Assistant unavailable. GROQ_API_KEY is not configured.")
     else:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.spinner(""):
-            response = chatbot.query(user_input)
+            response = cb.query(user_input)
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()
