@@ -383,7 +383,7 @@ with st.sidebar:
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-label">Knowledge Base</div>', unsafe_allow_html=True)
 
-    doc_count = len(chatbot.documents) if chatbot else 0
+    doc_count = len(st.session_state.chatbot.documents) if ('chatbot' in st.session_state and st.session_state.chatbot) else 0
     st.markdown(f"""
     <div class="stat-row">
         <span class="stat-key">Document chunks</span>
@@ -404,13 +404,20 @@ with st.sidebar:
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-label">Actions</div>', unsafe_allow_html=True)
 
+    if st.button("Start assistant"):
+        cb = get_chatbot()
+        if cb:
+            st.success("Assistant started.")
+            st.experimental_rerun()
+
     if st.button("Clear conversation"):
         st.session_state.messages = []
         st.rerun()
 
     if st.button("Clear knowledge base"):
-        if chatbot:
-            chatbot.clear_database()
+        cb = get_chatbot()
+        if cb:
+            cb.clear_database()
             st.success("Knowledge base cleared. Upload a document to start again.")
             st.rerun()
 
@@ -437,14 +444,15 @@ with st.sidebar:
         st.info("Refresh the page to clear file selection.")
     
     if upload_button_clicked:
-        if not chatbot:
+        cb = get_chatbot()
+        if not cb:
             st.error("Assistant unavailable. GROQ_API_KEY is not configured.")
         elif uploaded_files:
             added_count = 0
             failed_count = 0
             for uploaded_file in uploaded_files:
                 try:
-                    if chatbot.add_uploaded_file(uploaded_file):
+                    if cb.add_uploaded_file(uploaded_file):
                         added_count += 1
                         st.write(f"✓ Added {uploaded_file.name}")
                     else:
