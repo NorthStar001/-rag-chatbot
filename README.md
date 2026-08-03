@@ -1,64 +1,109 @@
 # NorthStar Assistance
 
-NorthStar Assistance is a lightweight document-based assistant powered by a Streamlit frontend, a Python retrieval pipeline, and Groq LLM inference. It is designed to answer questions from a single uploaded document at a time, keeping the knowledge source focused and avoiding cross-document confusion.
+NorthStar Assistance is a document-grounded chat application that helps users ask questions about a single uploaded document using a lightweight retrieval-augmented generation (RAG) pipeline. The project combines a Streamlit-based interface with Python document processing and Groq-powered language model inference to deliver answers that are grounded in the uploaded content.
 
-## What it does
+## Overview
 
-- Accepts questions about a document uploaded by the user.
-- Builds a temporary knowledge base from that uploaded file.
-- Returns answers grounded strictly in the uploaded document content.
-- Supports PDF, DOCX, and TXT uploads directly from the UI.
+This repository provides a practical example of building a focused document assistant for legal, academic, or business use cases where answers should stay tightly tied to a specific source document. Instead of relying on general knowledge, the system retrieves the most relevant passages from the provided document and uses them as context for the model.
 
-## Features
+## Key Features
 
-- Streamlit web interface with a polished chat experience
-- Uploaded-document-only knowledge mode
-- Sentence-aware chunking and TF-IDF retrieval
-- Groq API integration for answer generation
-- Sidebar controls for clearing the knowledge base and managing the session
+- Upload and analyze PDF, DOCX, and TXT documents directly through the web app
+- Build a local knowledge base from the uploaded content
+- Perform semantic-style retrieval using TF-IDF vector search
+- Split documents into sentence-aware chunks to preserve context
+- Generate answers with Groq LLM inference while grounding responses in the document
+- Clear the current knowledge base from the sidebar when starting a new session
+- Persist the processed database locally in the repository’s data folder
 
-## Tech stack
+## Technologies Used
 
 - Python
 - Streamlit
-- Groq
+- Groq API
 - scikit-learn
 - pypdf
 - python-docx
 - python-dotenv
+- NumPy
 
-## Project structure
+## Installation and Setup
 
-- app.py — Streamlit frontend
-- main.py — chatbot logic and document ingestion
-- rag_db/ — serialized knowledge base cache
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/NorthStar001/-rag-chatbot.git
+   cd -rag-chatbot
+   ```
 
-## Setup
-
-1. Clone the repository.
 2. Create and activate a virtual environment:
-   - Windows: `venv\Scripts\activate`
-   - macOS/Linux: `source venv/bin/activate`
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
+   ```
+
 3. Install dependencies:
-   - `pip install -r requirements.txt`
-4. Create a `.env` file with your Groq API key:
-   - `GROQ_API_KEY=your_key_here`
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Run locally
+4. Configure your environment:
+   Create a `.env` file in the project root with your Groq API key:
+   ```env
+   GROQ_API_KEY=your_api_key_here
+   ```
 
-Start the app with:
+   If you deploy the app on Streamlit Cloud, you can also configure this value in Streamlit secrets.
+
+## Usage
+
+Run the application locally:
 
 ```bash
 streamlit run app.py
 ```
 
-## Using the app
+Then:
+- Open the app in your browser
+- Upload a supported document from the sidebar
+- Ask a question about that document
+- Review the answer generated from the retrieved content
 
-- Upload a PDF, DOCX, or TXT file from the sidebar.
-- Ask questions about that uploaded document.
-- The assistant will answer using only that document’s content.
-- Use the sidebar to clear the current knowledge base and start fresh.
+## Example Workflow
 
-## Notes
+```text
+1. Upload a PDF or TXT file
+2. The app processes the document into chunks
+3. The retrieval layer finds the most relevant sections
+4. The LLM generates an answer grounded in those sections
+```
 
-This version is intentionally document-first. It does not rely on any preloaded default knowledge base, so uploaded content is the only active source for responses.
+## Project Structure
+
+```text
+app.py                # Streamlit user interface and app wiring
+main.py               # RAG pipeline, document ingestion, retrieval, and Groq integration
+requirements.txt     # Python dependencies
+rag_db/               # Local storage for the processed knowledge base
+.env.example         # Example environment variable file
+```
+
+## Configuration Requirements
+
+- A valid Groq API key is required for answer generation
+- The application expects the key to be available through either:
+  - a `.env` file locally, or
+  - Streamlit secrets in a deployed environment
+- Optional environment variable support exists for app URL configuration during deployment
+
+## Roadmap
+
+Potential future improvements include:
+- Support for multi-document conversations and cross-document retrieval
+- Source citation and highlighted evidence in responses
+- Conversation memory for follow-up questions
+- Better chunking and ranking strategies for larger documents
+- A more advanced UI for document management and chat history
+
+## Author
+
+Maintained by NorthStar001.
